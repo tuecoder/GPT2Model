@@ -39,7 +39,7 @@ TRAIN_CONFIG = {
 
 def load_text(path: str) -> str:
     if not os.path.exists(path):
-        print(f"Downloading dataset → {path}")
+        print(f"Downloading dataset -> {path}")
         urllib.request.urlretrieve(_DATA_URL, path)
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
