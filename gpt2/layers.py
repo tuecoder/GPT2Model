@@ -31,9 +31,9 @@ class FeedForward(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(cfg["emb_dim"], cfg["emb_dim"]),
+            nn.Linear(cfg["emb_dim"], cfg['ff_expansion']*cfg["emb_dim"]),
             Gelu(),
-            nn.Linear(cfg["emb_dim"], cfg["emb_dim"]),
+            nn.Linear(cfg['ff_expansion']*cfg["emb_dim"], cfg["emb_dim"]),
         )
 
     def forward(self, x):

@@ -12,10 +12,13 @@ class Transformer(nn.Module):
         self.dropout = nn.Dropout(cfg["drop_rate"])
         self.feed_forward = FeedForward(cfg)
 
-    def forward(self, x):
+    def forward(self, x, return_attn_weights=False):
         shortcut = x
         x = self.layer_norm1(x)
-        x = self.mmha(x)
+        if return_attn_weights:
+            x, attn_weights = self.mmha(x, return_attn_weights=True)
+        else:
+            x = self.mmha(x)
         x = self.dropout(x)
         x = x + shortcut
 
@@ -25,4 +28,6 @@ class Transformer(nn.Module):
         x = self.dropout(x)
         x = x + shortcut
 
+        if return_attn_weights:
+            return x, attn_weights
         return x

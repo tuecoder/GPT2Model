@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import tiktoken
 
 
@@ -105,31 +106,43 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
 
 
 def train_model_simple(model, train_loader, val_loader, optimizer, device, num_epochs,
-                       eval_freq, eval_iter, start_context, tokenizer):
-    train_losses, val_losses, track_tokens_seen = [], [], []
+                       eval_freq, eval_iter, start_context, tokenizer,
+                       accumulation_steps=1, scheduler=None):
+    train_losses, val_losses, track_tokens_seen, grad_norms = [], [], [], []
     tokens_seen, global_step = 0, -1
+    max_grad_norm_ = 1.0
 
     for epoch in range(num_epochs):
         model.train()
+        optimizer.zero_grad()
 
-        for input_batch, target_batch in train_loader:
-            optimizer.zero_grad()
+        for batch_idx, (input_batch, target_batch) in enumerate(train_loader):
             loss = calc_loss_batch(input_batch, target_batch, model, device)
-            loss.backward()
-            optimizer.step()
+            (loss / accumulation_steps).backward()
             tokens_seen += input_batch.numel()
-            global_step += 1
 
-            if global_step % eval_freq == 0:
-                train_loss, val_loss = evaluate_model(
-                    model, train_loader, val_loader, device, eval_iter
-                )
-                train_losses.append(train_loss)
-                val_losses.append(val_loss)
-                track_tokens_seen.append(tokens_seen)
-                print(f"Ep {epoch+1} (Step {global_step:06d}): "
-                      f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
+            is_update_step = (batch_idx + 1) % accumulation_steps == 0
+            is_last_batch = (batch_idx + 1) == len(train_loader)
+
+            if is_update_step or is_last_batch:
+                grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm_)
+                optimizer.step()
+                if scheduler is not None:
+                    scheduler.step()
+                optimizer.zero_grad()
+                global_step += 1
+
+                if global_step % eval_freq == 0:
+                    train_loss, val_loss = evaluate_model(
+                        model, train_loader, val_loader, device, eval_iter
+                    )
+                    train_losses.append(train_loss)
+                    val_losses.append(val_loss)
+                    track_tokens_seen.append(tokens_seen)
+                    grad_norms.append(grad_norm.item())
+                    print(f"Ep {epoch+1} (Step {global_step:06d}): "
+                          f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
 
         generate_and_print_sample(model, tokenizer, device, start_context)
 
-    return train_losses, val_losses, track_tokens_seen
+    return train_losses, val_losses, track_tokens_seen, grad_norms

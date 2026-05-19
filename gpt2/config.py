@@ -6,4 +6,5 @@ GPT_CONFIG_124M = {
     "n_layers": 12,
     "drop_rate": 0.1,
     "qkv_bias": False,
+    "ff_expansion": 4
 }

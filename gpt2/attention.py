@@ -46,7 +46,7 @@ class MultiHeadAttention(nn.Module):
             torch.triu(torch.ones(cfg["context_length"], cfg["context_length"]), diagonal=1),
         )
 
-    def forward(self, x):
+    def forward(self, x, return_attn_weights = False):
         b, num_tokens, _ = x.shape
 
         keys = self.W_key(x).view(b, num_tokens, self.num_heads, self.head_dim).transpose(1, 2)
@@ -59,4 +59,7 @@ class MultiHeadAttention(nn.Module):
         attn_weights = self.dropout(attn_weights)
 
         context_vec = (attn_weights @ values).transpose(1, 2).reshape(b, num_tokens, self.d_out)
-        return self.out_proj(context_vec)
+        out = self.out_proj(context_vec)
+        if return_attn_weights:
+            return out, attn_weights
+        return out
