@@ -23,12 +23,18 @@ env/
 *.pth
 *.ckpt
 the-verdict.txt
-loss_curve.png
-perplexity_curve.png
+
+# Plots (tracked only under docs/)
+*.png
+!docs/*.png
 
 # MLflow
 mlruns/
 mlartifacts/
+mlflow.db
+
+# Pytest
+.pytest_cache/
 
 # IDE
 .vscode/

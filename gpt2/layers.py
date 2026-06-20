@@ -14,7 +14,21 @@ class LayerNorm(nn.Module):
         var = torch.var(x, dim=-1, keepdim=True)
         output = (x - mean) / torch.sqrt(var + self.eps)
         return self.scale * output + self.shift
+    
+class RMSNorm(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.eps = 1e-5
+        self.scale = nn.Parameter(torch.ones(cfg["emb_dim"]))
 
+    def forward(self, x):
+        rms = torch.sqrt(torch.mean(x ** 2, dim=-1, keepdim=True) + self.eps)
+        return self.scale * (x / rms)
+
+def get_norm(cfg):
+    if cfg.get("norm_type", "layer_norm") == "rms_norm":
+        return RMSNorm(cfg)
+    return LayerNorm(cfg)
 
 class Gelu(nn.Module):
     def __init__(self):

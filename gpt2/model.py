@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from .attention import MultiHeadAttention
-from .layers import LayerNorm, FeedForward
+from .layers import FeedForward, get_norm
 from .transformer import Transformer
 
 
@@ -12,7 +12,7 @@ class GPTModel(nn.Module):
         self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
         self.trf_blocks = nn.Sequential(*[Transformer(cfg) for _ in range(cfg["n_layers"])])
         self.dropout = nn.Dropout(cfg["drop_rate"])
-        self.layer_norm = LayerNorm(cfg)
+        self.layer_norm = get_norm(cfg)
         self.out_head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
 
         self.apply(self._init_weights)

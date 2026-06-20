@@ -1,13 +1,13 @@
 import torch.nn as nn
 from .attention import MultiHeadAttention
-from .layers import LayerNorm, FeedForward
+from .layers import FeedForward, get_norm
 
 
 class Transformer(nn.Module):
     def __init__(self, cfg):
         super().__init__()
-        self.layer_norm1 = LayerNorm(cfg)
-        self.layer_norm2 = LayerNorm(cfg)
+        self.layer_norm1 = get_norm(cfg)
+        self.layer_norm2 = get_norm(cfg)
         self.mmha = MultiHeadAttention(cfg)
         self.dropout = nn.Dropout(cfg["drop_rate"])
         self.feed_forward = FeedForward(cfg)
